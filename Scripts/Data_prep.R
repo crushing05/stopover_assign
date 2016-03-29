@@ -8,6 +8,8 @@ require(dplyr)
 ## Makes names lowercase and change d2H column heading to "dd"
   names(dat) <- tolower(names(dat))
   names(dat)[10] <- "dd"
+  head(dat)
+  summary(dat$species)
   
 ## Write to ~/Processed data
    write.csv(dat, file = "Processed data/iso_data.csv", row.names = FALSE)
