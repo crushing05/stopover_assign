@@ -4,17 +4,25 @@ devtools::install_github("crushing05/crushingr")
 
 require(iso.assign2)
 require(crushingr) 
+require(tidyr)
+require(ggplot2)
+require(dplyr)
+
+#Function
+### Computed mean lat/long, weighted by posteriors
+source("R/wght_coord.R")
 
 ## Read basemap data
-  dat <- read.csv("Processed data/iso_data.csv")
+  dat <- read.csv("Processed data/stop_iso_data.csv")
+  head(dat)
   amre_base <- read.csv("Processed data/amre_base.csv")
   oven_base <- read.csv("Raw data/oven_base.csv")
   woth_base <- read.csv("Raw data/woth_base.csv")
 
 ## Convert date from factor to date in dat file
-  dat$date <- as.Date(dat$date, format = "%m/%d/%y")
+  dat$date <- as.Date(dat$date, format = "%Y-%m-%d")
 
-##AMRE ASSIGN
+##AMRE ASSIGN: estimate the likelihood of origin and likely/unlikely origins for stable hydrogen isotope samples
   amre_dd <- dat %>% filter(species == "AMRE")
 ## Subset AMRE data by site
   amre_app_dd <- amre_dd %>% filter(site == "APP")
@@ -30,9 +38,73 @@ require(crushingr)
                             app_origin = apply(amre_app_assign$iso.origin, 1, sum)/ncol(amre_app_assign$iso.like),
                             job_origin = apply(amre_job_assign$iso.origin, 1, sum)/ncol(amre_job_assign$iso.like),
                             mad_origin = apply(amre_mad_assign$iso.origin, 1, sum)/ncol(amre_mad_assign$iso.like))
-## Write results to ~Results
+
+  ## Write results to ~Results
   write.csv(amre_assign, file = "Results/amre_assign.csv", row.names = FALSE)
   
+## Subset AMRE data by sex: remove one unknown
+  ## Assign individuals for each sex
+  amre_ddS<-amre_dd[which(amre_dd$sex != 'U'),] #cut the one unknown
+  ## Create dataframe with assignment results
+## Subset AMRE data by age: remove one AHY
+  amre_ddA<-amre_dd[which(amre_dd$age != 'AHY'),] #cut the three AHY
+  ## Assign individuals for each age
+  ## Create dataframe with assignment results
+## Subset AMRE data by fat
+  ## Assign individuals for fat/ lean
+  ## Create dataframe with assignment results
+
+# more negative values indicate for northerly breeding latitudes
+# dd and passage day 
+  amre_date<-ggplot(data = amre_dd, aes(x = dd, y = day.yr)) + geom_point() + stat_smooth(method = "lm") + facet_wrap(~site, nrow = 1)
+# Fit intercept-only model
+  # mod3 <- with(amre_dd, lm(day.yr ~ dd*site))
+  # summary(mod3)
+  # Compare models using likelihood ratio test 
+  # anova(mod3, mod1)
+
+# dd and sex
+  amre_ddS<-amre_dd[which(amre_dd$sex != 'U'),] #cut the one unknown
+  amre_sex<-ggplot(data = amre_ddS, aes(x = dd, y = day.yr)) + geom_point() + stat_smooth(method = "lm") + facet_wrap(~sex, nrow = 1)
+
+# dd and age
+  amre_ddA<-amre_dd[which(amre_dd$age != 'AHY'),] #cut the three AHY
+  amre_age<-ggplot(data = amre_ddA, aes(x = dd, y = day.yr)) + geom_point() + stat_smooth(method = "lm") + facet_wrap(~age, nrow = 1)
+
+# dd and fat
+  #combine 2,3,4 fat score (fat 2 n=21, fat 3 n=10, fat 4 n=2)
+  amre_dd$fat2[amre_dd$fat=="0"] <- "0"
+  amre_dd$fat2[amre_dd$fat=="1"] <- "1"
+  amre_dd$fat2[amre_dd$fat=="2"| amre_dd$fat=="3"| amre_dd$fat=="4"] <- "2"
+  amre_dd$fat2 = factor(amre_dd$fat2, levels=c('0','1','2')) 
+  table(amre_dd$fat,amre_dd$fat2)
+  amre_fat<-ggplot(data = amre_dd, aes(x = dd, y = day.yr)) + geom_point() + stat_smooth(method = "lm") + facet_wrap(~fat2, nrow = 1)
+
+# dd and condition index
+#calculate condition index from wing chord and mass
+#index <-
+#correlation of fat and index
+  amre_index<-ggplot(data = amre_dd, aes(x = dd, y = index)) + geom_point() + stat_smooth(method = "lm") + facet_wrap(~site, nrow = 1)
+  
+# dd and cc by dd
+  amre_ddC <- amre_dd[!is.na(amre_dd$cc),] #remove NAs
+  summary(amre_ddC$cc)
+  amre_cc<-ggplot(data = amre_dd, aes(x = dd, y = cc)) + geom_point() + stat_smooth(method = "lm") + facet_wrap(~site, nrow = 1)
+
+# dd and cc by fat
+  amre_ddC <- amre_dd[!is.na(amre_dd$cc),] #remove NAs
+  amre_dd$fat3 <-as.numeric(as.character(amre_dd$fat2)) #change from factor to number
+  head(amre_dd)
+  amre_fat<-ggplot(data = amre_dd, aes(x = cc, y = fat3)) + geom_point() + stat_smooth(method = "lm")
+  
+  
+##Use function to measure mean lat long/ site, wihtout error
+  head(amre_assign)
+amre_app_origin <- wght_coord(prob = amre_app_assign$iso.prob[,1], origin = amre_app_assign$iso.origin[,1], lat = amre_base$y, lon = amre_base$x)
+
+
+
+
 ##OVEN ASSIGN
   oven_dd <- dat %>% filter(species == "OVEN")
 ## Subset OVEN data by site

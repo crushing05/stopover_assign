@@ -1,5 +1,6 @@
 require(ggplot2)
 require(dplyr)
+devtools::install_github("crushing05/crushingr") #includes default ggplot theme
 
 ## Individuals were captured at three stopover sites
 site.coords <- data.frame(site = c("mad", "job", "app"),
@@ -16,13 +17,14 @@ site.coords$site2<-factor(site.coords$site, levels=c("mad","job","app"),
     select(-origin)
   amre_tidy$site2<-factor(amre_tidy$site, levels=c("mad","job","app"), 
                           labels=c("Mad Island, TX","Johnson's Bayou, LA","Apalachicola, FL"))
+  head(amre_assign)
 ## Plot origins for each site
 # Get country and state boundaries for basemap
   all_countries <- map_data("world") %>% filter(region %in% c("Canada", "USA") & long < -30 & lat > 30 & lat < 65) 
   all_countries <- all_countries[-which(all_countries$subregion =="Alaska"),]
   all_states <- map_data("state")
 ##AMRE assignment plot
-  tiff(filename = "AMRE_Stopover2.tiff", width = 11, height = 4, units = "in", res = 300, compression = "lzw")
+  tiff(filename = "AMRE_Stopover3.tiff", width = 11, height = 4, units = "in", res = 300, compression = "lzw")
   amre_map <- ggplot() + 
               geom_raster(data = amre_tidy, aes(x = Longitude, y = Latitude, fill = origin.prob)) +
               geom_polygon(data=all_states, aes(x=long, y=lat, group = group),colour="black", fill =NA) +
@@ -31,9 +33,15 @@ site.coords$site2<-factor(site.coords$site, levels=c("mad","job","app"),
               geom_point(data=site.coords, aes(x = long, y = lat, label = site), color = "blue", size = 4) + 
               facet_wrap(~site2, nrow = 1) + 
               theme(axis.title = element_blank(), axis.text.x = element_blank(),axis.text.y = element_blank())
-  amre_map + ggtitle("American Redstart breeding destinations\nfrom spring stopover sites")
+  amre_map + ggtitle("American Redstart")
+  #amre_map + ggtitle("American Redstart breeding destinations\nfrom spring stopover sites")
 #print to file
   dev.off()
+  
+# Plot the relationship between passage day and site
+  ggplot(data = amre_stop, aes(x = dd, y = day)) + geom_point() +
+    stat_smooth(method = "lm") +
+    facet_wrap(~site, nrow = 1)
 
 ##OVEN
 ## Read Ovenbird assignment results
