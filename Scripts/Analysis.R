@@ -29,8 +29,8 @@ amre_coord <- wght_coord(prob = amre_assign$iso.prob, origin = amre_assign$iso.o
 amre_coord <- amre_coord %>% 
   mutate(site = amre_ko$SITE,
          lat_true = amre_ko$'lat',
-         lat_correct = ifelse(lat_true > yl & lat_true < yu, 1, 0),
-         lat_error = lat_true - y) %>%
+         lat_correct = ifelse(lat_true > lat_LCI & lat_true < lat_UCI, 1, 0),
+         lat_error = lat_true - lat) %>%
   separate(site, c("site", "state"), sep = ",")
 
 ## Test 1: Proportion of individuals w/ true lat w/i coord 95% CI
@@ -134,7 +134,7 @@ amre_coord %>%
   
 ##Use function to measure mean lat long/ site, wihtout error
   head(amre_assign)
-amre_app_origin <- wght_coord(prob = amre_app_assign$iso.prob[,1], origin = amre_app_assign$iso.origin[,1], lat = amre_base$y, lon = amre_base$x)
+amre_app_origin <- wght_coord(prob = amre_app_assign$iso.prob, origin = amre_app_assign$iso.origin, lat = amre_base$y, lon = amre_base$x)
 
 
 

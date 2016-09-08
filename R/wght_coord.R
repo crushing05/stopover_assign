@@ -71,7 +71,7 @@ wght_coord <- function(prob, origin, lat, lon) {
   x_u <- Lon_u * 180 / pi
   y_u <- Lat_u * 180 / pi
   
-  coords <- data.frame(x = x, y = y, xl = x_l, xu = x_u, yl = y_l, yu = y_u)
+  coords <- data.frame(lon = x, lat = y, lon_LCI = x_l, lon_UCI = x_u, lat_LCI = y_l, lat_UCI = y_u)
   return(coords)
 }
 
