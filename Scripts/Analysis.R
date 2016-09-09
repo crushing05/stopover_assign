@@ -12,6 +12,14 @@ require(dplyr)
 
 source("R/wght_coord.R")
 
+#bring in data
+## Read basemap data
+dat <- read.csv("Processed data/stop_iso_data.csv")
+head(dat)
+amre_base <- read.csv("Processed data/amre_base.csv")
+oven_base <- read.csv("Raw data/oven_base.csv")
+woth_base <- read.csv("Raw data/woth_base.csv")
+
 ############################################################
 ### Measure model performance using known-origin birds -----
 ############################################################
@@ -37,19 +45,11 @@ amre_coord <- amre_coord %>%
 
 amre_coord %>% group_by(state) %>% 
   summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) %>%
-  ggplot(., aes(x = lat, y = prob)) + geom_point()
+  ggplot(., aes(x = lat, y = prob, label=state)) + geom_point()+ geom_text()
 
 amre_coord %>%
-  ggplot(., aes(x = lat_true, y = y)) + geom_point() +
+  ggplot(., aes(x = lat_true, y = lat)) + geom_point() +
   geom_abline(intercept = 0, slope = 1, linetype = 'longdash', alpha = 0.5)
-
-
-## Read basemap data
-  dat <- read.csv("Processed data/stop_iso_data.csv")
-  head(dat)
-  amre_base <- read.csv("Processed data/amre_base.csv")
-  oven_base <- read.csv("Raw data/oven_base.csv")
-  woth_base <- read.csv("Raw data/woth_base.csv")
 
 ## Convert date from factor to date in dat file
   dat$date <- as.Date(dat$date, format = "%Y-%m-%d")
