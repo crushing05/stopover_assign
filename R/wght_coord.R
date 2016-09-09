@@ -4,6 +4,7 @@ wght_coord <- function(prob, origin, lat, lon) {
   prob <- prob * origin
   lat <- lat * origin
   lon <- lon * origin
+  nCell <- apply(origin1, 2, sum)
   
   # Convert lat/long to radians
   lat1 <- lat * pi / 180
