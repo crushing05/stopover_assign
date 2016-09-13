@@ -9,12 +9,11 @@ require(tidyr)
 require(ggplot2)
 require(dplyr)
 
-
 source("R/wght_coord.R")
 
 #bring in data
 ## Read basemap data
-dat <- read.csv("Processed data/stop_iso_data.csv")
+dat <- read.csv("Processed data/stop_iso_data.csv") #stop_iso_data.csv
 head(dat)
 amre_base <- read.csv("Processed data/amre_base.csv")
 oven_base <- read.csv("Raw data/oven_base.csv")
@@ -34,6 +33,7 @@ amre_assign <- iso_assign(dd = amre_ko$dD, df.base = amre_base$df.ahy)
 amre_coord <- wght_coord(prob = amre_assign$iso.prob, origin = amre_assign$iso.origin, lat = amre_base$y, lon = amre_base$x)
 
 ## Add auxillary variables to weighted coords
+## ignore warning message for too many values
 amre_coord <- amre_coord %>% 
   mutate(site = amre_ko$SITE,
          lat_true = amre_ko$'lat',
@@ -41,11 +41,25 @@ amre_coord <- amre_coord %>%
          lat_error = lat_true - lat) %>%
   separate(site, c("site", "state"), sep = ",")
 
+####Need to remove "Central" and "no name"
+nrow(amre_coord)
+#list(amre_coord$state)
+#amre_coord[is.na(amre_coord$state),] #all na are NY
+#5 with state missing, all in NY, Albany Pine Bush Preserve (2), Karner Barrens West (2), 
+#KMLS Road Barrens
+#amre_coord$state[is.na(amre_coord$state)]
+amre_coord$state[which(is.na(amre_coord$state))]<- c(" NY")
+names(amre_coord)
+#remove "central" interestingly, all states have a space in front of name
+amre_coord<-amre_coord[which(amre_coord$state != ' Central'),] 
+names(amre_coord)
+nrow(amre_coord)
+
 ## Test 1: Proportion of individuals w/ true lat w/i coord 95% CI
 
 amre_coord %>% group_by(state) %>% 
   summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) %>%
-  ggplot(., aes(x = lat, y = prob, label=state)) + geom_point()+ geom_text()
+  ggplot(., aes(x = lat, y = prob, label=state)) + geom_point()+ geom_text(vjust=1.5)
 
 amre_coord %>%
   ggplot(., aes(x = lat_true, y = lat)) + geom_point() +
