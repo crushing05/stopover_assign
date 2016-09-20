@@ -22,7 +22,6 @@ woth_base <- read.csv("Raw data/woth_base.csv")
 ############################################################
 ### Measure model performance using known-origin birds -----
 ############################################################
-
 ### AMRE
 amre_ko <- read.csv("Raw data/AMRE_dd.csv")
 
@@ -65,6 +64,7 @@ amre_coord %>%
   ggplot(., aes(x = lat_true, y = lat)) + geom_point() +
   geom_abline(intercept = 0, slope = 1, linetype = 'longdash', alpha = 0.5)
 
+########################################################
 ## Convert date from factor to date in dat file
   dat$date <- as.Date(dat$date, format = "%Y-%m-%d")
 
@@ -151,7 +151,41 @@ amre_coord %>%
 amre_app_origin <- wght_coord(prob = amre_app_assign$iso.prob, origin = amre_app_assign$iso.origin, lat = amre_base$y, lon = amre_base$x)
 
 
+############################################################
+### Measure model performance using known-origin birds -----
+############################################################
+### OVEN
+load("Raw data/OVEN_data.RData") #OVEN_dd object will be loaded
+head(oven_dd)
+## Isotope assignment
+oven_assign <- iso_assign(dd = oven_dd$dD, df.base = oven_base$df.ahy)
 
+## Weighted coordinates
+oven_coord <- wght_coord(prob = oven_assign$iso.prob, origin = oven_assign$iso.origin, lat = oven_base$y, lon = oven_base$x)
+
+## Add auxillary variables to weighted coords
+## ignore warning message for too many values
+oven_coord <- oven_coord %>% 
+  mutate(site = oven_dd$SITE,
+         lat_true = oven_dd$'lat',
+         lat_correct = ifelse(lat_true > lat_LCI & lat_true < lat_UCI, 1, 0),
+         lat_error = lat_true - lat) %>%
+  separate(site, c("site", "state"), sep = ",")
+
+nrow(oven_coord)
+table(oven_coord$state)
+
+## Test 1: Proportion of individuals w/ true lat w/i coord 95% CI
+
+oven_coord %>% group_by(state) %>% 
+  summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) %>%
+  ggplot(., aes(x = lat, y = prob, label=state)) + geom_point()+ geom_text(vjust=1.5)
+
+oven_coord %>%
+  ggplot(., aes(x = lat_true, y = lat)) + geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = 'longdash', alpha = 0.5)
+
+########################################################
 
 ##OVEN ASSIGN
   oven_dd <- dat %>% filter(species == "OVEN")
@@ -171,6 +205,85 @@ amre_app_origin <- wght_coord(prob = amre_app_assign$iso.prob, origin = amre_app
                             mad_origin = apply(oven_mad_assign$iso.origin, 1, sum)/ncol(oven_mad_assign$iso.like))
 ## Write results to ~Results
   write.csv(oven_assign, file = "Results/oven_assign.csv", row.names = FALSE)
+
+  ############################################################
+  ### Measure model performance using known-origin birds -----
+  ############################################################
+  ### WOTH
+  load("Raw data/WOTH_data.RData") #OVEN_dd object will be loaded
+  head (woth_dd)
+#add    lat    long to file
+#   NC: 35.41, 83.12
+#   VA: 38.71, 77.15
+#   IN: 38.84, 86.82
+#   MI: 42.16, 85.47
+#   VT: 44.51, 73.15
+table(woth_dd$state)
+woth_dd$state<-toupper(woth_dd$state)
+woth_dd$lat<- 35.4
+woth_dd$lon<- 83.12
+woth_dd$lat[which(woth_dd$state == "VA")] <- 38.71
+woth_dd$lon[which(woth_dd$state == "VA")] <- 77.15
+woth_dd$lat[which(woth_dd$state == "IN")] <- 38.84
+woth_dd$lon[which(woth_dd$state == "IN")] <- 86.82
+woth_dd$lat[which(woth_dd$state == "MI")] <- 42.16
+woth_dd$lon[which(woth_dd$state == "MI")] <- 85.47
+woth_dd$lat[which(woth_dd$state == "VT")] <- 44.51
+woth_dd$lon[which(woth_dd$state == "VT")] <- 73.15
+table(woth_dd$lat,woth_dd$state)
+table(woth_dd$lon,woth_dd$state)
+  
+  ## Isotope assignment
+  woth_assign <- iso_assign(dd = woth_dd$dd, df.base = woth_base$df.ahy)
+
+  ## Weighted coordinates
+  woth_coord <- wght_coord(prob = woth_assign$iso.prob, origin = woth_assign$iso.origin, lat = woth_base$y, lon = woth_base$x)
+  head(woth_coord)
+ 
+  ## Add auxillary variables to weighted coords
+  ## ignore warning message for too many values
+  woth_coord <- woth_coord %>% 
+    mutate(state = woth_dd$state,
+           lat_true = woth_dd$'lat',
+           lat_correct = ifelse(lat_true > lat_LCI & lat_true < lat_UCI, 1, 0),
+           lat_error = lat_true - lat) 
+  
+  head(woth_coord)
+  
+  ## Test 1: Proportion of individuals w/ true lat w/i coord 95% CI
+    woth_coord %>% group_by(state) %>% 
+    summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) %>%
+    ggplot(., aes(x = lat, y = prob, label=state)) + geom_point()+ geom_text(vjust=1.5)
+  
+  woth_coord %>%
+    ggplot(., aes(x = lat_true, y = lat)) + geom_point() +
+    geom_abline(intercept = 0, slope = 1, linetype = 'longdash', alpha = 0.5)
+
+  ## All three species: Proportion of individuals w/ true lat w/i coord 95% CI
+  head(oven_coord)
+  head(amre_coord) 
+  head(woth_coord)
+  #add species name
+  woth_coord$species<- "WOTH"
+  oven_coord$species<- "OVEN"
+  amre_coord$species<- "AMRE"
+  #remove site
+  oven_coord2 = subset(oven_coord, select = -c(site))
+  amre_coord2 = subset(amre_coord, select = -c(site))
+  head(oven_coord2)
+  head(amre_coord2)
+  #combine
+  all_coord<-rbind(oven_coord2, amre_coord2)
+  all_coord2<-rbind(all_coord, woth_coord)
+  head(all_coord2)
+  #plot together with colors for species
+  all_coord2 %>% group_by(state) %>% 
+    summarize(correct = sum(lat_correct), n = length(lat_correct), 
+    prob = correct/n, lat = max(lat_true)) %>%
+    ggplot(., aes(x = lat, y = prob, label=state)) + 
+    geom_point() + geom_text(vjust=1.5) +geom_line(y=0.75)
+  
+  ########################################################
   
 ##WOTH ASSIGN
   woth_dd <- dat %>% filter(species == "WOTH")
