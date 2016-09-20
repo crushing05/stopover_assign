@@ -55,7 +55,6 @@ names(amre_coord)
 nrow(amre_coord)
 
 ## Test 1: Proportion of individuals w/ true lat w/i coord 95% CI
-
 amre_coord %>% group_by(state) %>% 
   summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) %>%
   ggplot(., aes(x = lat, y = prob, label=state)) + geom_point()+ geom_text(vjust=1.5)
@@ -260,29 +259,24 @@ table(woth_dd$lon,woth_dd$state)
     geom_abline(intercept = 0, slope = 1, linetype = 'longdash', alpha = 0.5)
 
   ## All three species: Proportion of individuals w/ true lat w/i coord 95% CI
-  head(oven_coord)
-  head(amre_coord) 
-  head(woth_coord)
+##summary
+  amre_state<-amre_coord %>% group_by(state) %>% summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) 
+  oven_state<-oven_coord %>% group_by(state) %>% summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) 
+  woth_state<-woth_coord %>% group_by(state) %>% summarize(correct = sum(lat_correct), n = length(lat_correct), prob = correct/n, lat = max(lat_true)) 
+  head(amre_state)
+  head(oven_state)
+  head(woth_state)
   #add species name
-  woth_coord$species<- "WOTH"
-  oven_coord$species<- "OVEN"
-  amre_coord$species<- "AMRE"
-  #remove site
-  oven_coord2 = subset(oven_coord, select = -c(site))
-  amre_coord2 = subset(amre_coord, select = -c(site))
-  head(oven_coord2)
-  head(amre_coord2)
+  woth_state$species<- "WOTH"
+  oven_state$species<- "OVEN"
+  amre_state$species<- "AMRE"  
   #combine
-  all_coord<-rbind(oven_coord2, amre_coord2)
-  all_coord2<-rbind(all_coord, woth_coord)
+  all_coord<-rbind(woth_state, oven_state)
+  all_coord2<-rbind(all_coord, amre_state)
   head(all_coord2)
-  #plot together with colors for species
-  all_coord2 %>% group_by(state) %>% 
-    summarize(correct = sum(lat_correct), n = length(lat_correct), 
-    prob = correct/n, lat = max(lat_true)) %>%
-    ggplot(., aes(x = lat, y = prob, label=state)) + 
-    geom_point() + geom_text(vjust=1.5) +geom_line(y=0.75)
-  
+  #plot
+  ggplot(all_coord2, aes(x = lat, y = prob, label=state, group=species)) + geom_point(aes(colour = species)) + 
+    geom_text(vjust=1.5) + geom_line(y=0.75) + geom_line(y=0.5) + geom_line(y=0.25)
   ########################################################
   
 ##WOTH ASSIGN
