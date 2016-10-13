@@ -4,12 +4,10 @@ devtools::install_github("crushing05/crushingr")
 
 require(crushingr)
 require(iso.assign2)
-require(crushingr) 
 require(tidyr)
 require(ggplot2)
 require(dplyr)
-
-source("R/wght_coord.R")
+require(purrr)
 
 #bring in data
 ## Read basemap data
@@ -26,10 +24,20 @@ woth_base <- read.csv("Raw data/woth_base.csv")
 amre_ko <- read.csv("Raw data/AMRE_dd.csv")
 
 ## Isotope assignment
-amre_assign <- iso_assign(dd = amre_ko$dD, df.base = amre_base$df.ahy)
+amre_assign <- iso_assign(dd = amre_ko$dD, df_base = amre_base$df.ahy, lat = amre_base$y, lon= amre_base$x) 
+#optional arguments= can give indiv a unique ID, can change the odd ratio to any value 0-1, right now is 67%
+
+#Weighted abundance
+amre_base$rel.abun <- amre_base$abun / sum(amre_base$abun)
+
+amre_assign2 <- abun_assign(iso_data = amre_assign, rel_abun = amre_base$rel.abun, iso_weight = 0, abun_weight = -1) 
+#adds abunance assignment results to isotope results; weights from Rushing & Studds (in revision)
+#for WOTH & OVEN: iso_weight = -0.7, abun_weight = 0
 
 ## Weighted coordinates
-amre_coord <- wght_coord(prob = amre_assign$iso.prob, origin = amre_assign$iso.origin, lat = amre_base$y, lon = amre_base$x)
+amre_coord <- iso.assign2::wght_coord(summ = amre_assign2, iso = FALSE)
+# if iso = TRUE, coordinates estimated using isotope-only assignment; if iso = FALSe, estimated from abundance model
+#should compare results
 
 ## Add auxillary variables to weighted coords
 ## ignore warning message for too many values
