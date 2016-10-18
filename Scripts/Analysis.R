@@ -41,12 +41,15 @@ amre_coord <- iso.assign2::wght_coord(summ = amre_assign2, iso = FALSE)
 
 ## Add auxillary variables to weighted coords
 ## ignore warning message for too many values
-amre_coord <- amre_coord %>% 
-  mutate(site = amre_ko$SITE,
-         lat_true = amre_ko$'lat',
-         lat_correct = ifelse(lat_true > lat_LCI & lat_true < lat_UCI, 1, 0),
+amre_ko$indv <- paste("Indv_", seq(1: nrow(amre_ko)), sep = "")
+
+amre_coord <- amre_coord %>% left_join(., amre_ko, by = "indv") %>%
+  rename(lat_true = lat.y, lon_true = lon.y, lat = lat.x, lon = lon.x) %>%
+  mutate(lat_correct = ifelse(lat_true > lat_LCI & lat_true < lat_UCI, 1, 0),
          lat_error = lat_true - lat) %>%
-  separate(site, c("site", "state"), sep = ",")
+  separate(SITE, c("site", "state"), sep = ",") %>%
+  select(indv, lon, lat, lon_LCI, lat_LCI, lon_UCI, lat_UCI, ID, site, state, lat_true, lat_correct, lat_error)
+
 
 ####Need to remove "Central" and "no name"
 nrow(amre_coord)
