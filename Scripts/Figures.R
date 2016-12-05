@@ -1,8 +1,10 @@
 require(ggplot2)
 require(dplyr)
+require(maps)
 devtools::install_github("crushing05/crushingr") #includes default ggplot theme
 require(crushingr)
 require(tidyr)
+require(mapproj)
 ## Individuals were captured at three stopover sites
 ## Assignment of stopover samples
 #Individuals were captured at three sites 
@@ -28,7 +30,9 @@ ggplot() + coord_map(projection = "sinusoidal") + # #"albers", lat0=30, lat1=40
   theme(axis.ticks = element_blank(), axis.text.y = element_blank()) +
   theme(axis.ticks = element_blank(), axis.text.x = element_blank()) 
 
+##############################
 ##AMRE
+##############################
 ## Read Redstart assignment results
   amre_assign <- read.csv("Results/amre_assign.csv")
 ## Tidy result dataframe to aid plotting
@@ -44,7 +48,7 @@ ggplot() + coord_map(projection = "sinusoidal") + # #"albers", lat0=30, lat1=40
   all_countries <- all_countries[-which(all_countries$subregion =="Alaska"),]
   all_states <- map_data("state")
 ##AMRE assignment plot
-tiff(filename = "AMRE_Stopover_tile2.tiff", width = 12, height = 4, units = "in", res = 300, compression = "lzw")
+tiff(filename = "AMRE_Stopover_site.tiff", width = 12, height = 4, units = "in", res = 300, compression = "lzw")
    amre_map <- ggplot() + 
     #coord_map(projection = "sinusoidal") + #"lambert", lat0 = 40, lat1 = 20
     #geom_tile(data = amre_tidy, aes(x = Longitude, y = Latitude, fill = origin.prob)) + 
@@ -62,11 +66,15 @@ tiff(filename = "AMRE_Stopover_tile2.tiff", width = 12, height = 4, units = "in"
   dev.off()
   
 # Plot the relationship between passage day and site
-  ggplot(data = amre_stop, aes(x = dd, y = day)) + geom_point() +
+  #dat from Analysis.R
+  head(amre_dd.ll)
+  ggplot(data = amre_dd.ll, aes(x = lat, y = day.yr)) + geom_point() +
     stat_smooth(method = "lm") +
     facet_wrap(~site, nrow = 1)
 
+##############################
 ##OVEN
+##############################
 ## Read Ovenbird assignment results
   oven_assign <- read.csv("Results/oven_assign.csv")
 ## Tidy result dataframe to aid plotting
